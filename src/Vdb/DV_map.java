@@ -141,6 +141,7 @@ public class DV_map
     /* avoid java heap issues when the user turns it on)                     */
     /* Also keep in mind that flipflop is REQUIRED with real DV!             */
     else
+      byte_maps = MapFile.createNewFile(jnl_dir_name, map_name, map_length);  //wen:added
       flipflop_bitmap = new DedupBitMap().createMapForFlipFlop(dedup, map_length, map_name);
 
 
@@ -994,31 +995,31 @@ public class DV_map
                   "key blocks marked in error: %4d ", validation_reads, bad_blocks);
 
 
-    if (validation_reads == 0)
-    {
-      if (SlaveWorker.work.work_rd_name.startsWith(SD_entry.SD_FORMAT_NAME))
-        return;
-      if (SlaveWorker.work.format_run)
-        return;
-      if (SlaveWorker.work.only_eof_writes)
-        return;
-      if (Validate.skipRead())
-        return;
+    // if (validation_reads == 0)
+    // {
+    //   if (SlaveWorker.work.work_rd_name.startsWith(SD_entry.SD_FORMAT_NAME))
+    //     return;
+    //   if (SlaveWorker.work.format_run)
+    //     return;
+    //   if (SlaveWorker.work.only_eof_writes)
+    //     return;
+    //   if (Validate.skipRead())
+    //     return;
 
-      txt.removeAllElements();
-      txt.add("No read validations done during a Data Validation run.");
-      txt.add("This means very likely that your run was not long enough to");
-      txt.add("access the same data block twice. ");
-      txt.add("There are several solutions to this: ");
-      txt.add("- increase elapsed time. ");
-      txt.add("- use larger xfersize. ");
-      txt.add("- use only a subset of your lun by using the 'sd=...,size=' ");
-      txt.add("  parameter or the 'sd=...,range=' parameter.");
-      txt.add("Or, you never did any writes so Vdbench does not know what to ");
-      txt.add("compare the data with. In that case, change the rdpct= parameter.");
-      SlaveJvm.sendMessageToConsole(txt);
-      common.failure("No read validations done during a Data Validation run.");
-    }
+    //   txt.removeAllElements();
+    //   txt.add("No read validations done during a Data Validation run.");
+    //   txt.add("This means very likely that your run was not long enough to");
+    //   txt.add("access the same data block twice. ");
+    //   txt.add("There are several solutions to this: ");
+    //   txt.add("- increase elapsed time. ");
+    //   txt.add("- use larger xfersize. ");
+    //   txt.add("- use only a subset of your lun by using the 'sd=...,size=' ");
+    //   txt.add("  parameter or the 'sd=...,range=' parameter.");
+    //   txt.add("Or, you never did any writes so Vdbench does not know what to ");
+    //   txt.add("compare the data with. In that case, change the rdpct= parameter.");
+    //   SlaveJvm.sendMessageToConsole(txt);
+    //   common.failure("No read validations done during a Data Validation run.");
+    // }
   }
 
 

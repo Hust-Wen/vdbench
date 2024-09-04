@@ -511,7 +511,6 @@ public class IO_task extends Thread
 
 
       /* All the rest below requires serious data buffer work and is done here: */
-
       /* Tell KeyMap about this data block: */
       if (key_map.storeDataBlockInfo(cmd.cmd_lba, cmd.cmd_xfersize, cmd.sd_ptr.dv_map))
       {
@@ -807,6 +806,7 @@ public class IO_task extends Thread
     long tod = (Validate.isRealValidate()) ? System.currentTimeMillis() : 0;
     rc = 0;
 
+    tod = (Validate.isValidate()) ? System.currentTimeMillis() : 0; //wen:added
 
     //  for (int i = 0; i < key_map.getKeyCount(); i++)
     //  {

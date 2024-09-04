@@ -72,9 +72,7 @@ public class Vdbmain
 
   public static volatile boolean vdbench_ended = false;
 
-
   static boolean kstat_console = false;
-
 
   /* Unique run time value to make sure we don't fiddle with */
   /* old masters and slaves                                  */

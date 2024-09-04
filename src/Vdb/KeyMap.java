@@ -414,12 +414,12 @@ public class KeyMap
       /* Dedup for unique blocks: always increment/flipflop */
       else if (Dedup.isUnique(set))
       {
-        if (Validate.isRealValidate())
-        {
-          key_map[i] = dv_map.dv_increment(key_map[i], set);
-          if (key_map[i] == 0)
-            common.failure("Increment keys results in a zero key");
-        }
+        // if (Validate.isRealValidate())
+        // {
+        //   key_map[i] = dv_map.dv_increment(key_map[i], set);
+        //   if (key_map[i] == 0)
+        //     common.failure("Increment keys results in a zero key");
+        // }
 
         /* flipflop really is a mechanism for DUPLICATES. UNIQUES change */
         /* regardless of the flip/flop state. */
@@ -428,6 +428,10 @@ public class KeyMap
         //  key_map[i] = dv_map.flipflop(key_map[i]);
         //  //common.ptod("flipflop1: %,12d %016x %s", block, set, Dedup.xlate(set));
         //}
+        
+        //wen:added
+        key_map[i] = 0;
+        dv_map.getDedup().unique_writes++; 
       }
 
       /* Dedup for duplicate blocks: without flipflop: no flipflop */
@@ -436,6 +440,7 @@ public class KeyMap
         //if (Dedup.getKey(set) != 0)
         //  common.failure("During THIS test key should not be other than zero: %016x", set);
 
+        dv_map.getDedup().duplicate_writes++;  //wen:added
         continue;
       }
 
@@ -453,14 +458,35 @@ public class KeyMap
       }
 
       /* Dedup for duplicate blocks: with flipflop: flipflop */
-      else
+      else  
       {
-        //common.ptod("key_map[i]1: " + key_map[i]);
-        key_map[i] = dv_map.flipflop(key_map[i]);
-        //common.ptod("key_map[i]2: " + key_map[i]);
+        // //common.ptod("key_map[i]1: " + key_map[i]);
+        // key_map[i] = dv_map.flipflop(key_map[i]);
+        // //common.ptod("key_map[i]2: " + key_map[i]);
+        // dv_map.getDedup().duplicate_writes++;
+
+        //wen:added
+        Dedup dedup = dv_map.getDedup();
+        int set_id = (int)(set & 0xffffffff);
+        int key_of_set = dedup.GetKeyofDedupSet(set_id);
+        if(key_map[i] == (key_of_set & 0x7f)) {
+          if(((++key_of_set) & 0x7f) == 127)  //DV_map.DV_ERROR is 0x7f (127), skip DV_ERROR key
+            key_of_set = key_of_set + 2;    //skip zero key
+          dedup.SetKeyofDedupSet(set_id, key_of_set);
+          key_map[i] = (key_of_set & 0x7f);
+          dedup.fail_duplicate_writes++;
+          dedup.unique_writes++;
+        }
+        else {
+          key_map[i] = (key_of_set & 0x7f);
+          dedup.duplicate_writes++;
+        }
+        set |= (((((long) key_of_set) >>> 7) & 0xffffff) << 24);    //0xffffff000000
+        
         if (key_map[i] == 0)
-          common.failure("Increment keys results in a zero key");
+          common.failure("mapped keys is a zero key");
         //common.ptod("flipflop3: %,12d %016x", block, set);
+        // set |= Dedup.UNIQUE_BLOCK_MASK;
       }
 
       /* The new DV key must be replaced in the set: */

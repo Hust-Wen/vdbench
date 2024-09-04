@@ -72,6 +72,14 @@ public class Dedup implements Serializable, Cloneable
   public  static Dedup    dedup_default = new Dedup();
   public  static boolean  any_hotsets_requested = false;
 
+  //wen:added
+  private int[]   key_of_set = null;
+
+  public  long    unique_lbas      = 0;
+  public  long    duplicate_lbas   = 0;
+  public  long    unique_writes    = 0;
+  public  long    duplicate_writes = 0;
+  public  long    fail_duplicate_writes = 0;
 
   /* These fields are also used in vdbjni.h and vdb_dv.c
      (first 32 bits)
@@ -152,7 +160,18 @@ public class Dedup implements Serializable, Cloneable
   {
     return dedup_ratio;
   }
-
+  public long getDedupSetsUsed()
+  {
+    return dedup_sets_used;
+  }
+  public int GetKeyofDedupSet(int set_id)
+  {
+    return key_of_set[set_id];
+  }
+  public void SetKeyofDedupSet(int set_id, int key)
+  {
+    key_of_set[set_id] = key;
+  }
 
   /**
    * Reporting all Dedup information.
@@ -382,7 +401,16 @@ public class Dedup implements Serializable, Cloneable
       long pattern_lba  = key_map.pattern_lba + dedup_unit * i;
       long pattern_blk  = pattern_lba / dedup_unit;
       long rel_block    = pattern_blk + sd.sdd.rel_byte_start / dedup_unit;
-      boolean unique    = dedup_pct == 100. || sd.sdd.uniques_bitmap.isUnique(pattern_blk);
+      // boolean unique    = dedup_pct == 100. || sd.sdd.uniques_bitmap.isUnique(pattern_blk);
+
+      //wen:modified
+      int blocks_per_DedupSet = (int)(unit_blocks / dedup_sets_used) + 1;
+      int set_id = (int)(rel_block / blocks_per_DedupSet);
+      int key    = key_map.getKeys()[i];
+      int set_key = GetKeyofDedupSet(set_id);
+      // boolean unique = ((double)(unique_writes + duplicate_writes) / (unique_writes+1)) >= dedup_ratio;
+      boolean unique = ((double)(unique_writes + duplicate_writes) / (unique_writes+1)) >= dedup_ratio && key != (set_key & 0x7f);
+      // boolean unique = ((double)(unique_writes + duplicate_writes) / (unique_writes+1)) >= dedup_ratio && pattern_lba != GetMainLBAofSet(pattern_lba);
 
       /* The first hot blocks may of course NOT be unique: */
       // this has been taken care of in the bitmap already?
@@ -402,20 +430,24 @@ public class Dedup implements Serializable, Cloneable
           dedup_set = UNIQUE_BLOCK_ACROSS_NO;
 
         /* Set compression offset. */
+        dedup_set |= set_id;  //wen:added
         compression = getUniqueCompressionOffset(pattern_lba);
+
+        unique_lbas++;
       }
 
       /* For a duplicate, compression offset and set number are related: */
       else
       {
-        dedup_set   = sd.sdd.translateDuplicateBlockToSet(rel_block);
+        // dedup_set   = sd.sdd.translateDuplicateBlockToSet(rel_block);
+        dedup_set = set_id;   //wen:modified
         compression = getDuplicateCompressionOffset(dedup_set);
+
+        duplicate_lbas++;
       }
 
-
-
       /* Dedup does not use a 'key', it has a 'flipflop': */
-      int key    = key_map.getKeys()[i];
+      // int key    = key_map.getKeys()[i];
       dedup_set |= ((long) key << 56);
       dedup_set |= ((long) dedup_type << 32);
 
@@ -552,7 +584,7 @@ public class Dedup implements Serializable, Cloneable
     double sets   = (dedup_sets_reqd > 0) ? dedup_sets_reqd :
                     blocks * Math.abs(dedup_sets_reqd) / 100;
 
-    /* Create an adjusted dedup%: */
+    /* Create an adjusted dedup%: */  
     dedup_adjusted  = Math.max((dedup_pct - (sets * 100. / blocks)), 0);
     dedup_adjusted  = (dedup_pct == 100) ? 100 : dedup_adjusted;
     dedup_sets_used = Math.max(1, (long) sets);
@@ -611,6 +643,13 @@ public class Dedup implements Serializable, Cloneable
       common.failure("You do not have enough dedup sets. You are requested more "+
                      "hot dedup sets (%d) than you have dedup sets (%d)",
                      hot_dedup_sets, dedup_sets_used);
+    }
+
+    //wen:added
+    if (key_of_set == null) {
+      key_of_set = new int [(int) dedup_sets_used];
+      for(int i=0; i<dedup_sets_used; i++)
+        key_of_set[i] = 0;
     }
   }
 
@@ -1074,6 +1113,12 @@ public class Dedup implements Serializable, Cloneable
     addLine("flipflops",          "%,15d", flipflops);
     //addLine("est_sets_pct",       "%15.2f", est_sets_pct);
 
+    //wen:added 
+    addLine("unique_lbas",    "%,15d;",  unique_lbas);
+    addLine("duplicate_lbas",    "%,15d;",  duplicate_lbas);
+    addLine("unique_writes",    "%,15d;",  unique_writes);
+    addLine("duplicate_writes",    "%,15d;",  duplicate_writes);
+    addLine("fail_duplicate_writes",    "%,15d;",  fail_duplicate_writes);
 
     /* Note that rounding issues can cause a MINOR delta with the requested ratio */
     double calc_ratio  =  ((double) unit_blocks / (unique_blocks + dedup_sets_used));
