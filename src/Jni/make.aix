@@ -1,0 +1,88 @@
+#!/bin/ksh
+#
+
+#
+# I received the 7.1 system from gnanakumar.rajaram@oracle.com
+#
+# Mount: mount 10.79.9.18:/export/home1/16/hvandenb /henkv
+
+
+mine=/henkv/vdbench504/Jni
+
+JAVA_PATH=/usr/java6
+
+PATH=/usr/vac/bin:/usr/vacpp/bin:/usr/bin:$PATH
+export PATH
+
+CC_PATH=/usr/vac/bin
+CXX_PATH=/usr/vacpp/bin
+XLF_PATH=/usr/bin
+
+
+CC="$CC_PATH/xlc -qlanglvl=extc99"
+CXX=$CXX_PATH/xlC
+FC=$XLF_PATH/xlf95
+
+
+INCLUDES=" -DAIX -I$JAVA_PATH/include -I/usr/include/ -I$JAVA_PATH/include/c++/powerpc-ibm-aix5.3.0.0 "
+
+cd /tmp
+
+
+
+echo Compiling 32bit
+
+$CC -q32  ${INCLUDES} -c $mine/vdbjni.c
+$CC -q32  ${INCLUDES} -c $mine/vdbaix.c
+$CC -q32  ${INCLUDES} -c $mine/vdb_dv.c
+$CC -q32  ${INCLUDES} -c $mine/vdb.c
+
+echo Linking 32bit
+
+#
+# This link is for 32-bit.
+# You may also do a 64-bit compile (find the proper compiler flags).
+# The shared library name then must be aix-64.so
+#
+
+#
+# WARNING: All compiler warnings may be ignored. They are all typecast related
+#
+
+# $CC  -o  /mnt/vdbench/aix/aix-32.so vdbjni.o vdbaix.o vdb_dv.o vdb.o  -lpthreads -shared
+rm /henkv/vdbench504/aix/aix-32.so  2>/dev/null
+$CC -q32  -o  /henkv/vdbench504/aix/aix-32.so vdbjni.o vdbaix.o vdb_dv.o vdb.o -G -lpthreads
+
+
+
+
+echo Compiling 64bit
+
+$CC -q64  ${INCLUDES} -c $mine/vdbjni.c
+$CC -q64  ${INCLUDES} -c $mine/vdbaix.c
+$CC -q64  ${INCLUDES} -c $mine/vdb_dv.c
+$CC -q64  ${INCLUDES} -c $mine/vdb.c
+
+echo Linking 64bit
+
+#
+# This link is for 32-bit.
+# You may also do a 64-bit compile (find the proper compiler flags).
+# The shared library name then must be aix-64.so
+#
+
+#
+# WARNING: All compiler warnings may be ignored. They are all typecast related
+#
+
+# $CC  -o  /mnt/vdbench/aix/aix-32.so vdbjni.o vdbaix.o vdb_dv.o vdb.o  -lpthreads -shared
+rm /henkv/vdbench504/aix/aix-64.so 2>/dev/null
+$CC -q64  -o  /henkv/vdbench504/aix/aix-64.so vdbjni.o vdbaix.o vdb_dv.o vdb.o -G -lpthreads
+
+
+
+
+
+
+
+

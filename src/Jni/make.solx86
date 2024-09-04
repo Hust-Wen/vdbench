@@ -1,0 +1,95 @@
+#!/bin/ksh
+#
+
+#
+# Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+#
+
+#
+# Author: Henk Vandenbergh.
+#
+
+# eye catcher:
+echo "\n\n\n\n\n\n=================================\n\n"
+
+# Pick up the proper parent directory from this current script:
+dir=`dirname $0`
+cd $dir
+cd ..
+LIB=`pwd`
+echo LIB: $LIB
+
+
+
+#mount mf-ubrm-02:/usr/dist /usr/dist
+
+CC="cc"
+CC="/usr/dist/pkgs/devpro/5bin.i86pc/SC4.2/bin/cc"
+CC="/usr/dist/share/sunstudio_i386,v10.0/SUNWspro/bin/cc"
+CC="/net/129.147.9.5/usr/dist/share/sunstudio_i386,v12.0/SUNWspro/bin/cc"
+
+CC="/usr/dist/share/sunstudio_i386,v12.0/SUNWspro/bin/cc"
+#CC="/opt/sunstudio12.1/bin/cc"
+#CC="/net/129.147.9.5/usr/dist/share/sunstudio_i386,v12.0/SUNWspro/bin/cc"
+
+
+CC="/net/mf-ubrm-01/usr/dist/share/sunstudio_i386,v12.0/SUNWspro/bin/cc"
+
+CC="/net/mf-ubrm-01/usr/dist/share/sunstudio_i386,v12.0/SUNWspro/prod/bin/cc"
+
+cd /tmp
+rm *.o
+
+echo Starting 32bit compiles
+
+#INC=/usr/dist/share/sunstudio_i386/SUNWspro/prod/include/CC/stlport4
+STDINC=/net/mf-ubrm-01/usr/dist/share/sunstudio_i386/SUNWspro/prod/include/CC/stlport4
+
+java=/net/sbm-240a.us.oracle.com/export/swat/swat_java/solx86/jdk1.7.0_09
+
+
+#sol10 INCS="-m32 -I$LIB/Jni -I/usr/java/include/ -I/usr/java/include/solaris"
+INCS="-m32 -I$STDINC -I$LIB/Jni -I$java/include/ -I$java/include/solaris "
+INCS="-m32 -I/usr/include -I$LIB/Jni -I$java/include/ -I$java/include/solaris "
+
+
+$CC                        -c -g -xCC $INCS $LIB/Jni/solvtoc.c    -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/vdb_dv.c     -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/vdb.c        -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/snap.c       -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/chmod.c       -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/kstat.c      -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/kstatcpu.c   -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/vdbjni.c     -DSOLARIS -DKSTAT
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/vdbsol.c     -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/nfs_kstat.c  -DSOLARIS
+
+echo Starting 32bit link
+$CC  -m32 -o  $LIB/solx86/solx86-32.so -mt -G -ladm  -lkstat vdb.o chmod.o snap.o solvtoc.o vdb_dv.o vdbjni.o vdbsol.o kstat.o kstatcpu.o nfs_kstat.o -ldl -lrt
+
+
+rm *.o
+
+echo Starting 64bit compiles
+
+INCS="-m64 -fPIC -I$LIB/Jni -I/usr/java/include/ -I/usr/java/include/solaris "
+INCS="-m64 -fPIC -I$LIB/Jni -I$java/include/ -I$java/include/solaris "
+
+
+$CC                        -c -g -xCC $INCS $LIB/Jni/solvtoc.c    -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/vdb_dv.c     -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/vdb.c        -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/snap.c       -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/chmod.c       -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/kstat.c      -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/kstatcpu.c   -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/vdbjni.c     -DSOLARIS -DKSTAT
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/vdbsol.c     -DSOLARIS
+$CC -D_FILE_OFFSET_BITS=64 -c -g -xCC $INCS $LIB/Jni/nfs_kstat.c  -DSOLARIS
+
+echo Starting 64bit link
+$CC  -m64 -o  $LIB/solx86/solx86-64.so -mt -G -ladm  -lkstat vdb.o chmod.o snap.o solvtoc.o vdb_dv.o vdbjni.o vdbsol.o kstat.o kstatcpu.o nfs_kstat.o -ldl -lrt
+
+chmod 777 $LIB/solx86/*.so
+
+

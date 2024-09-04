@@ -1,0 +1,89 @@
+#!/bin/bash
+
+#
+# Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+#
+
+#
+# Author: Henk Vandenbergh.
+#
+
+#
+#
+#  Starting 2018, 32bit compile started failing:
+#  /usr/bin/ld: skipping incompatible /usr/lib/gcc/x86_64-redhat-linux/4.8.5/libgcc_s.so when searching for -lgcc_s
+#  /usr/bin/ld: cannot find -lgcc_s
+#  collect2: error: ld returned 1 exit status
+#
+#  This resolved it:
+#
+#      yum install glibc-devel.i686 libgcc.i686 libstdc++-devel.i686 ncurses-devel.i686
+#
+#
+#
+#   04/25/18:
+#      A compile on oel7 caused the shared library to require the use of a newer GLIBC
+#       which of course did not exist on older oel6 system
+#
+#      A recompile on oel6 fixed that.
+#
+#
+#
+#
+
+
+
+
+vdb=$mine/vdbench504
+java=/net/sbm-240a.us.oracle.com/export/swat/swat_java/linux/jdk1.5.0_22/
+jni=$vdb/Jni
+
+echo target directory: $vdb
+
+
+
+INCLUDES32="-w -m32 -DLINUX -I$java/include -I/$java/include/linux -I/usr/include/ -fPIC"
+INCLUDES64="-w -m64 -DLINUX -I$java/include -I/$java/include/linux -I/usr/include/ -fPIC"
+
+
+cd /tmp
+rm *.o 2>/dev/null
+
+
+echo Compiling 32 bit
+
+rm $vdb/linux/linux32.so 2>/dev/null
+gcc ${INCLUDES32} -c $jni/vdbjni.c
+gcc ${INCLUDES32} -c $jni/vdblinux.c
+gcc ${INCLUDES32} -c $jni/vdb_dv.c
+gcc ${INCLUDES32} -c $jni/vdb.c
+gcc ${INCLUDES32} -c $jni/chmod.c
+
+echo Linking 32 bit
+echo
+
+gcc  -o   $vdb/linux/linux32.so vdbjni.o vdblinux.o vdb_dv.o vdb.o chmod.o -lm -shared  -m32 -lrt
+
+chmod 777 $vdb/linux/linux32.so
+
+
+cd /tmp
+rm *.o 2>/dev/null
+
+
+echo Compiling 64 bit
+rm $vdb/linux/linux64.so 2>/dev/null
+gcc ${INCLUDES64} -c $jni/vdbjni.c
+gcc ${INCLUDES64} -c $jni/vdblinux.c
+gcc ${INCLUDES64} -c $jni/vdb_dv.c
+gcc ${INCLUDES64} -c $jni/vdb.c
+gcc ${INCLUDES64} -c $jni/chmod.c
+
+echo Linking 64 bit
+echo
+
+gcc  -o   $vdb/linux/linux64.so vdbjni.o vdblinux.o vdb_dv.o vdb.o chmod.o -lm -shared -m64 -lrt
+
+chmod 777 $vdb/linux/linux64.so 2>/dev/null
+
+

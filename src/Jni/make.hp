@@ -1,0 +1,58 @@
+
+echo compiling vdbjni.c
+cc  -I/opt/java1.4/include/ -I/opt/java1.4/include/hp-ux/ -Ae +u4 +z  -c vdbjni.c -DHP
+
+echo compiling vdbhp.c
+cc  -I/opt/java1.4/include/ -I/opt/java1.4/include/hp-ux/ -Ae +u4 +z  -c vdbhp.c  -DHP
+
+echo compiling vdb.c
+cc  -I/opt/java1.4/include/ -I/opt/java1.4/include/hp-ux/ -Ae +u4 +z  -c vdb.c  -DHP
+
+echo compiling vdb_dv.c
+cc  -I/opt/java1.4/include/ -I/opt/java1.4/include/hp-ux/ -Ae +u4 +z  -c vdb_dv.c  -DHP
+
+echo linking libvdbench.sl
+ld  -b -o hp/libvdbench.sl vdbjni.o vdbhp.o vdb.o vdb_dv.o
+
+
+
+Below received from Hisayoshi.Kato@Sun.COM on 3/24/06:
+
+echo compiling vdbjni.c
+cc  -I/opt/java1.4/include/ -I/opt/java1.4/include/hp-ux/ -Ae +u4 +z  -c vdbjni.c -DHP
+
+echo compiling vdbhp.c
+cc  -I/opt/java1.4/include/ -I/opt/java1.4/include/hp-ux/ -Ae +u4 +z  -c vdbhp.c  -DHP
+
+echo compiling vdb.c
+cc  -I/opt/java1.4/include/ -I/opt/java1.4/include/hp-ux/ -Ae +u4 +z  -c vdb.c  -DHP
+
+echo compiling vdb_dv.c
+cc  -I/opt/java1.4/include/ -I/opt/java1.4/include/hp-ux/ -Ae +u4 +z  -c vdb_dv.c  -DHP
+
+echo linking libvdbench.sl
+ld  -b -o hp/libvdbench.sl vdbjni.o vdbhp.o vdb.o vdb_dv.o
+
+
+#
+# WARNING: All compiler warnings may be ignored. They are all typecast related
+#
+
+with following messages:
+
+# ./make.hp
+compiling vdbjni.c
+(Bundled) cc: warning 922: "-Ae" is unsupported in the bundled compiler, ignored.
+(Bundled) cc: warning 922: "+u4" is unsupported in the bundled compiler, ignored.
+compiling vdbhp.c
+(Bundled) cc: warning 922: "-Ae" is unsupported in the bundled compiler, ignored.
+(Bundled) cc: warning 922: "+u4" is unsupported in the bundled compiler, ignored.
+compiling vdb.c
+(Bundled) cc: warning 922: "-Ae" is unsupported in the bundled compiler, ignored.
+(Bundled) cc: warning 922: "+u4" is unsupported in the bundled compiler, ignored.
+compiling vdb_dv.c
+(Bundled) cc: warning 922: "-Ae" is unsupported in the bundled compiler, ignored.
+(Bundled) cc: warning 922: "+u4" is unsupported in the bundled compiler, ignored.
+linking libvdbench.sl
+
+
