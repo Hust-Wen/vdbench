@@ -60,7 +60,7 @@ public class SdDedup implements Serializable
     long my_block = rel_block - rel_block_start;
     if (my_block >= hot_blocks.size())
     {
-      long set = dedup.translateBlockToSet(rel_block);
+      long set = dedup.translateBlockToSet(my_block);
       if (debug) common.ptod("nothot: %6d %6d %6d %s", rel_block_start, rel_block, set, name);
       return set;
     }

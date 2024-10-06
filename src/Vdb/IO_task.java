@@ -807,6 +807,7 @@ public class IO_task extends Thread
     long tod = (Validate.isRealValidate()) ? System.currentTimeMillis() : 0;
     rc = 0;
 
+    tod = (Validate.isValidate()) ? System.currentTimeMillis() : 0;   //this field used for generating unique data corresponding the current time
 
     //  for (int i = 0; i < key_map.getKeyCount(); i++)
     //  {

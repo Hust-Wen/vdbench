@@ -385,7 +385,7 @@ public class KeyMap
    * Return: false if any key block in the current data block is marked in
    * error.
    */
-  public boolean incrementKeys()
+  public synchronized boolean incrementKeys()
   {
     /* This field needs to be rebuilt: */
     sum_of_keys = 0;
@@ -396,8 +396,18 @@ public class KeyMap
       long lba   = file_start_lba + file_lba + i * key_block_size;
       long block = lba / key_block_size;
       long set   = dedup_sets[i];
-
+      int  set_id = (int)(set & Dedup.DEDUPSET_NUMBER_MASK);
+      long max_block = dv_map.getDedup().total_size / key_block_size;
       //common.ptod("set0: %016x", set);
+      if (dv_map.getDedup().is_duplicate[(int)block])
+      {
+        int key = key_map[i];
+        dv_map.getDedup().refcount_per_set[set_id][key]--;
+        // if (dv_map.getDedup().refcount_per_set[set_id][key] < 0)
+        //   common.failure(String.format("the refcount_per_set[%d(%d)][%d] of block %d(%d / %d = %d) is %d < 0 after a %s write (before is %s)", 
+        //   set_id, dv_map.getDedup().getDedupSetsUsed(), key, block, dv_map.getDedup().total_size, key_block_size, max_block, 
+        //   dv_map.getDedup().refcount_per_set[set_id][key], Dedup.isUnique(set) ? "unique" : "duplicate", dv_map.getDedup().is_duplicate[(int)block] ? "duplicate" : "unique"));
+      }
 
       if (Dedup.isDedup() && set == Dedup.DEDUP_NO_DEDUP)
         common.failure("not expected: %d", i);
@@ -428,6 +438,8 @@ public class KeyMap
         //  key_map[i] = dv_map.flipflop(key_map[i]);
         //  //common.ptod("flipflop1: %,12d %016x %s", block, set, Dedup.xlate(set));
         //}
+        dv_map.getDedup().unique_writes++;
+        dv_map.getDedup().is_duplicate[(int)block] = false;
       }
 
       /* Dedup for duplicate blocks: without flipflop: no flipflop */
@@ -435,7 +447,6 @@ public class KeyMap
       {
         //if (Dedup.getKey(set) != 0)
         //  common.failure("During THIS test key should not be other than zero: %016x", set);
-
         continue;
       }
 
@@ -456,10 +467,21 @@ public class KeyMap
       else
       {
         //common.ptod("key_map[i]1: " + key_map[i]);
-        key_map[i] = dv_map.flipflop(key_map[i]);
+        dv_map.getDedup().duplicate_writes++;
+        // key_map[i] = dv_map.flipflop(key_map[i]);
+        key_map[i] = dv_map.my_flipflop(key_map[i]);
         //common.ptod("key_map[i]2: " + key_map[i]);
         if (key_map[i] == 0)
           common.failure("Increment keys results in a zero key");
+        if (dv_map.getDedup().refcount_per_set[set_id][key_map[i]] == 0)
+        {
+          dv_map.getDedup().fail_duplicate_writes++;
+          dv_map.getDedup().duplicate_writes--;
+          dv_map.getDedup().unique_writes++;
+          dv_map.getDedup().refcount_per_set[set_id][key_map[i]] = 1;
+        }
+        dv_map.getDedup().refcount_per_set[set_id][key_map[i]]++;
+        dv_map.getDedup().is_duplicate[(int)block] = true;
         //common.ptod("flipflop3: %,12d %016x", block, set);
       }
 

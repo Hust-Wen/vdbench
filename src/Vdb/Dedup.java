@@ -72,6 +72,17 @@ public class Dedup implements Serializable, Cloneable
   public  static Dedup    dedup_default = new Dedup();
   public  static boolean  any_hotsets_requested = false;
 
+  //wen:added
+  public  long    unique_lbas      = 0;
+  public  long    duplicate_lbas   = 0;
+  public  long    unique_writes    = 0;
+  public  long    duplicate_writes = 0;
+  public  long    fail_duplicate_writes = 0;
+  public  long    key_increase = 0;
+  public  int     lbas_per_dedup_set = 0;
+  public  int     blocks_per_dedup_set = 0;
+  public  short[][]   refcount_per_set = null;
+  public  boolean[]   is_duplicate = null;
 
   /* These fields are also used in vdbjni.h and vdb_dv.c
      (first 32 bits)
@@ -151,6 +162,10 @@ public class Dedup implements Serializable, Cloneable
   public double getDedupRatio()
   {
     return dedup_ratio;
+  }
+  public long getDedupSetsUsed()
+  {
+    return dedup_sets_used;
   }
 
 
@@ -356,6 +371,14 @@ public class Dedup implements Serializable, Cloneable
     return compression;
   }
 
+  public synchronized void inc_unique_lbas()
+  {
+    unique_lbas++;
+  }
+  public synchronized void inc_duplicate_lbas()
+  {
+    duplicate_lbas++;
+  }
 
   /**
    * Prepare this block to be written with it's proper dedup and compression
@@ -383,6 +406,8 @@ public class Dedup implements Serializable, Cloneable
       long pattern_blk  = pattern_lba / dedup_unit;
       long rel_block    = pattern_blk + sd.sdd.rel_byte_start / dedup_unit;
       boolean unique    = dedup_pct == 100. || sd.sdd.uniques_bitmap.isUnique(pattern_blk);
+      //wen:modified
+      unique = (dedup_pct == 100.) || (((double)(unique_writes + duplicate_writes) / (unique_writes + 1)) >= dedup_ratio);
 
       /* The first hot blocks may of course NOT be unique: */
       // this has been taken care of in the bitmap already?
@@ -395,14 +420,15 @@ public class Dedup implements Serializable, Cloneable
         /* With 'compression only' we come here too: */
         // Sure?
         if (!isDedup())
-          dedup_set = DEDUP_NO_DEDUP;
+          dedup_set = DEDUP_NO_DEDUP | sd.sdd.translateDuplicateBlockToSet(rel_block);
         else if (dedup_across)
-          dedup_set = UNIQUE_BLOCK_ACROSS_YES;
+          dedup_set = UNIQUE_BLOCK_ACROSS_YES | sd.sdd.translateDuplicateBlockToSet(rel_block);
         else
-          dedup_set = UNIQUE_BLOCK_ACROSS_NO;
+          dedup_set = UNIQUE_BLOCK_ACROSS_NO | sd.sdd.translateDuplicateBlockToSet(rel_block);
 
         /* Set compression offset. */
         compression = getUniqueCompressionOffset(pattern_lba);
+        inc_unique_lbas();
       }
 
       /* For a duplicate, compression offset and set number are related: */
@@ -410,6 +436,7 @@ public class Dedup implements Serializable, Cloneable
       {
         dedup_set   = sd.sdd.translateDuplicateBlockToSet(rel_block);
         compression = getDuplicateCompressionOffset(dedup_set);
+        inc_duplicate_lbas();
       }
 
 
@@ -561,6 +588,11 @@ public class Dedup implements Serializable, Cloneable
 
     unique_blocks    = (long) (blocks * dedup_adjusted / 100.);
     duplicate_blocks = unit_blocks - unique_blocks;
+    lbas_per_dedup_set = (int) (duplicate_blocks / dedup_sets_used);
+    blocks_per_dedup_set = lbas_per_dedup_set / 2;
+    blocks_per_dedup_set = (blocks_per_dedup_set == 0 ? 1 : blocks_per_dedup_set);
+    refcount_per_set = new short[(int)dedup_sets_used][128];
+    is_duplicate = new boolean[(int)unit_blocks];
 
     if (hotflop && hot_dedup_parms.length == 0)
       common.failure("Requesting 'dedupflipflop=hot' without specifying 'deduphotsets=nnn'");
@@ -1074,6 +1106,14 @@ public class Dedup implements Serializable, Cloneable
     addLine("flipflops",          "%,15d", flipflops);
     //addLine("est_sets_pct",       "%15.2f", est_sets_pct);
 
+    //wen:added 
+    addLine("unique_lbas",    "%,15d;",  unique_lbas);
+    addLine("duplicate_lbas",    "%,15d;",  duplicate_lbas);
+    addLine("unique_writes",    "%,15d;",  unique_writes);
+    addLine("duplicate_writes",    "%,15d;",  duplicate_writes);
+    addLine("fail_duplicate_writes",    "%,15d;",  fail_duplicate_writes);
+    addLine("key_increase",    "%,15d;",  key_increase);
+    addLine("blocks_per_dedup_set",    "%,15d;",  blocks_per_dedup_set);
 
     /* Note that rounding issues can cause a MINOR delta with the requested ratio */
     double calc_ratio  =  ((double) unit_blocks / (unique_blocks + dedup_sets_used));
