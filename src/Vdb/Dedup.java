@@ -80,9 +80,9 @@ public class Dedup implements Serializable, Cloneable
   public  long    fail_duplicate_writes = 0;
   public  long    key_increase = 0;
   public  int     lbas_per_dedup_set = 0;
-  public  int     blocks_per_dedup_set = 0;
   public  short[][]   refcount_per_set = null;
   public  boolean[]   is_duplicate = null;
+  public  int     max_keys = 32;
 
   /* These fields are also used in vdbjni.h and vdb_dv.c
      (first 32 bits)
@@ -589,9 +589,7 @@ public class Dedup implements Serializable, Cloneable
     unique_blocks    = (long) (blocks * dedup_adjusted / 100.);
     duplicate_blocks = unit_blocks - unique_blocks;
     lbas_per_dedup_set = (int) (duplicate_blocks / dedup_sets_used);
-    blocks_per_dedup_set = lbas_per_dedup_set / 2;
-    blocks_per_dedup_set = (blocks_per_dedup_set == 0 ? 1 : blocks_per_dedup_set);
-    refcount_per_set = new short[(int)dedup_sets_used][128];
+    refcount_per_set = new short[(int)dedup_sets_used][max_keys+1];
     is_duplicate = new boolean[(int)unit_blocks];
 
     if (hotflop && hot_dedup_parms.length == 0)
@@ -1113,7 +1111,6 @@ public class Dedup implements Serializable, Cloneable
     addLine("duplicate_writes",    "%,15d;",  duplicate_writes);
     addLine("fail_duplicate_writes",    "%,15d;",  fail_duplicate_writes);
     addLine("key_increase",    "%,15d;",  key_increase);
-    addLine("blocks_per_dedup_set",    "%,15d;",  blocks_per_dedup_set);
 
     /* Note that rounding issues can cause a MINOR delta with the requested ratio */
     double calc_ratio  =  ((double) unit_blocks / (unique_blocks + dedup_sets_used));

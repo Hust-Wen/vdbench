@@ -688,11 +688,11 @@ public class DV_map
     //common.failure("there should not be any incrementing here");
     dedup.flipflops++;
     do {
-      res = (int)(getRandomStartKey() % (dedup.lbas_per_dedup_set)) + 1;
+      res = (int)(getRandomStartKey() % (dedup.max_keys)) + 1;
     } while (res == key);
 
-    if (res > 126)
-      common.failure(String.format("the key %d is out of range [1,126]", res));
+    if (res > dedup.max_keys)
+      common.failure(String.format("the key %d is out of range [1,%d]", res, dedup.max_keys));
     return res;
   }
 
