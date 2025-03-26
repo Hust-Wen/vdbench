@@ -141,7 +141,10 @@ public class DV_map
     /* avoid java heap issues when the user turns it on)                     */
     /* Also keep in mind that flipflop is REQUIRED with real DV!             */
     else
+    {
+      byte_maps = MapFile.createNewFile(jnl_dir_name, map_name, map_length);
       flipflop_bitmap = new DedupBitMap().createMapForFlipFlop(dedup, map_length, map_name);
+    }
 
 
     /* Create timestamp map? */
@@ -677,6 +680,30 @@ public class DV_map
       common.failure("Unexpected flipflop value: " + key);
       return -1;
     }
+  }
+
+  public int my_flipflop(int key)
+  {
+    int res;
+    //common.failure("there should not be any incrementing here");
+    dedup.flipflops++;
+    do {
+      res = (int)(getRandomStartKey() % (dedup.lbas_per_dedup_set)) + 1;
+    } while (res == key);
+
+    if (res > 126)
+      common.failure(String.format("the key %d is out of range [1,126]", res));
+    return res;
+  }
+
+  public synchronized void inc_unique_writes()
+  {
+    dedup.unique_writes++;
+  }
+
+  public synchronized void inc_duplicate_writes()
+  {
+    dedup.duplicate_writes++;
   }
 
   /**
