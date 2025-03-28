@@ -25,7 +25,7 @@ dir=`dirname $0`
 cp=$dir/:$dir/classes:$dir/vdbench.jar
 
 # Proper path for java:
-java=java
+java=/usr/lib/jvm/java-1.8.0-openjdk-amd64/bin/java
 
 
 # When out of memory, modify the first set of memory parameters. See above.

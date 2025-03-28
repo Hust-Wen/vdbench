@@ -1,0 +1,7 @@
+*.class
+sources.txt
+output.log
+/test_result
+/warm_result
+test_Dedup
+warm_Dedup
